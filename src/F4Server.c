@@ -1,36 +1,3 @@
-/**
- * Certamente! Di seguito trovi un elenco puntato delle attività da svolgere per implementare il gioco "Forza 4" utilizzando le system call SYSTEMV in ambiente UNIX/LINUX:
-
-1. Implementazione del server (F4Server):
-   - Analizzare e interpretare i parametri di linea di comando (dimensioni del campo, gettoni dei giocatori).
-   - Creare l'area di memoria condivisa per il campo di gioco.
-   - Inizializzare la memoria condivisa con il campo vuoto.
-   - Creare e inizializzare i semafori per la sincronizzazione dei giocatori.
-   - Gestire gli errori in caso di presenza precedente di campi di gioco (memoria condivisa e semafori).
-   - Gestire il comando CTRL-C per terminare correttamente il gioco.
-   - Arbitrare la partita, controllando le mosse dei giocatori e verificando le condizioni di vittoria.
-   - Notificare ai client se hanno vinto o se la partita è finita in parità.
-   - Gestire la terminazione del gioco e rimuovere correttamente le IPC (memoria condivisa e semafori).
-
-2. Implementazione del client (F4Client):
-   - Analizzare e interpretare il parametro di linea di comando (nome del giocatore).
-   - Connettersi al server e attendere il secondo giocatore.
-   - Notificare al giocatore la ricerca di un avversario.
-   - Visualizzare la matrice di gioco aggiornata.
-   - Richiedere al giocatore la colonna in cui inserire il gettone.
-   - Controllare se la colonna è disponibile o piena.
-   - Gestire il comando CTRL-C per terminare correttamente il gioco.
-   - Notificare al server la vittoria per abbandono in caso di disconnessione del giocatore.
-
-3. Funzionalità aggiuntive:
-   - Implementare il timeout per ogni mossa e decidere l'azione da intraprendere al suo scadere.
-   - Creare un client automatico che effettua mosse casuali se eseguito con l'apposita opzione.
-
-Ricorda che durante l'implementazione dovrai utilizzare le system call SYSTEMV, come la gestione dei processi figli, la memoria condivisa, i semafori e i segnali tra processi. Assicurati di gestire correttamente gli errori e di seguire le regole del gioco descritte nel testo.
-
-Se hai ulteriori domande o hai bisogno di ulteriori chiarimenti su una specifica parte dell'implementazione, sarò qui per aiutarti.
-*/
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -41,10 +8,11 @@ Se hai ulteriori domande o hai bisogno di ulteriori chiarimenti su una specifica
 #include <time.h>
 #include <fcntl.h>
 
+#include "err_exit.h"
 
 void check_args(int argc, char **argv);
-void init_matrix(int *shm_ptr, int rows, int cols);
-void print_matrix(int* shm_ptr, int rows, int cols);
+void init_matrix(void *shm_ptr, int rows, int cols);
+void print_matrix(void *shm_ptr, int rows, int cols);
 int get_shm(int shm_key, int size);
 void *at_shm(int shm_id, int shm_flg);
 void dt_shm(void *ptr_sh);
@@ -109,11 +77,10 @@ int main(int argc, char **argv) {
 
 
 
-
 void check_args(int argc, char **argv){
-    if(argc>5){
+    if(argc!=5){
         usage();
-        err_exit("Mi hai passato troppi argomenti.");
+        err_exit("Mi hai passato un numero errato di argomenti.");
     } 
     else if(atoi(argv[1])<5){
         usage();
@@ -125,18 +92,20 @@ void check_args(int argc, char **argv){
     } 
 }
 
-void init_matrix(int *shm_ptr, int rows, int cols){
+void init_matrix(void *shm_ptr, int rows, int cols){
+    int (*matrix)[cols] = (void*)shm_ptr;
     for(int i=0; i<rows; i++){
         for(int j=0; j<cols; j++){
-            *(shm_ptr+i*cols+j) = 0;
+            matrix[i][j] = 0;
         }
     }
 }
 
-void print_matrix(int* shm_ptr, int rows, int cols){
+void print_matrix(void *shm_ptr, int rows, int cols){
+    int (*matrix)[cols] = (void*)shm_ptr;
     for(int i=1; i<rows; i++){
         for(int j=1; j<cols; j++){
-            printf("[%d,%d]=[%d]", i,j,*(shm_ptr+i*cols+j));
+            printf("[%d]", matrix[i][j]);
         }
         printf("\n");
     }
@@ -184,7 +153,8 @@ int get_sem(int sem_key, int sem_num){
 void ctl_sem(int sem_id, int sem_num){
     errno=0;
     union semun arg;
-    unsigned short arr[] = {0};
+    unsigned short arr[sem_num];
+    for(int i=0; i<sem_num; i++){ arr[i]=1; }
     arg.array = arr;
     
     int sem_ctl = semctl(sem_id, sem_num, SETALL, arg);
@@ -199,7 +169,7 @@ void usage(){
 }
 
 void err_exit(char *msg){
-    printf("%s\n\n\n", msg);
+    perror(msg);
     exit(EXIT_FAILURE);
 }
 
