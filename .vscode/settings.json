@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "shm.h": "c",
+        "init_game.h": "c",
+        "stdlib.h": "c",
+        "err_exit.h": "c"
+    }
+}
