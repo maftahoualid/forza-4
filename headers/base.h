@@ -9,6 +9,8 @@
 #include <sys/shm.h>
 #include <sys/sem.h>
 #include <time.h>
+#include <unistd.h>
 #include <fcntl.h>
+#include <signal.h>
 
 #endif
