@@ -26,6 +26,9 @@ int main(int argc, char **argv) {
     int sem_id; // ID SEMAFORI
     int sem_num = 10; // NUMERO SEMAFORI
     
+    int msq_key;
+    int msq_id;
+
     shm_key = ftok("../.",'a');
     printf("[SERVER DEBUG] shm_key: %d\n",shm_key);
     // CREO LA MEMORIA CONDIVISA //
@@ -49,10 +52,16 @@ int main(int argc, char **argv) {
     ctl_sem(sem_id,sem_num);
 
     printf("[SERVER DEBUG] In attesa che i due client si colleghino.\n");
-    wait_sem(sem_id);
+    wait_sem(sem_id, 0);
     printf("[SERVER DEBUG] Client 1 collegato\n");
-    wait_sem(sem_id);
+    wait_sem(sem_id, 0);
     printf("[SERVER DEBUG] Client 2 collegato\n");
+
+    struct matrix_dim dim1 = {(long)1.0, rows, cols};
+    msq_key = ftok("../.", 'c');
+    msq_id = msgget(msq_key, IPC_CREAT | 0666 );
+    msgsnd(msq_id,&dim1,sizeof(int)*2,0);
+    signal_sem(sem_id, 1);
 
     forza4(sem_id,shm_ptr,rows,cols);
 

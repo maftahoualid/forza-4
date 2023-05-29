@@ -64,9 +64,9 @@ void print_matrix(void *shm_ptr, int rows, int cols){
 
 int get_shm(int shm_key, int size) {
     errno=0;
-    int shm_id = shmget(shm_key, size, IPC_CREAT | IPC_EXCL | 0666 );
+    int shm_id = shmget(shm_key, size, IPC_CREAT /*| IPC_EXCL*/ | 0666 );
     if (shm_id == -1){
-        if(errno == EEXIST){ err_exit("[ERROR]: memoria condivisa già esistente.\n"); }
+        //if(errno == EEXIST){ err_exit("[ERROR]: memoria condivisa già esistente.\n"); }
         err_exit("[ERROR]: nella creazione della memoria.\n");
     }
     return shm_id;
@@ -114,8 +114,8 @@ void ctl_sem(int sem_id, int sem_num){
     }
 }
 
-void wait_sem(int sem_id) {
-    struct sembuf sem_op = (struct sembuf){0, -1, 0};
+void wait_sem(int sem_id, int sem_num) {
+    struct sembuf sem_op = (struct sembuf){sem_num, -1, 0};
     errno = 0;
     int semop_ret;
     do {
@@ -124,8 +124,8 @@ void wait_sem(int sem_id) {
     } while (semop_ret==-1 && errno==EINTR);
 }
 
-void signal_sem(int sem_id){
-    struct sembuf sem_op = (struct sembuf){0,1,0};
+void signal_sem(int sem_id, int sem_num){
+    struct sembuf sem_op = (struct sembuf){sem_num,1,0};
     int semop_ret;
     errno = 0;
     do {
@@ -141,7 +141,7 @@ void forza4(int sem_id, int* shm_ptr, int rows, int cols){
     int winner=0;
 
     while (winner==0){
-        wait_sem(sem_id);
+        wait_sem(sem_id, 0);
     }
 
     do {
@@ -159,7 +159,7 @@ void forza4(int sem_id, int* shm_ptr, int rows, int cols){
         }
     }
 
-    winner = check_winner();
+    winner = check_winner(shm_ptr,rows,cols);
     if(winner!=0){
         printf("Vince giocatore %d", player_num);
     } else { player_num = (player_num)?2:1; }
@@ -196,3 +196,24 @@ int check_winner(int* shm_ptr, int rows, int cols){
     // (DIAGONAL OR) NO WIN
     return 0;
 }
+/*
+int get_msq(int msq_key){
+    int msq_id = msgget(msq_key, IPC_CREAT | 0666);
+    if(msq_id==-1){
+        err_exit("[ERROR] msgget");
+    }
+    return msq_id;
+}
+
+void send_msg(int msq_id, struct matrix_dim* dim){
+    if(msgsnd(msq_id,dim,sizeof(int),0)==-1){
+        err_exit("[ERROR] msgsnd");
+    }
+}
+
+void receive_msg(int msq_id, struct matrix_dim* dim){
+    if(msgrcv(msq_id,dim,sizeof(int),(long)1.0,0)==-1){
+        err_exit("[ERROR] msgsnd");
+    }
+}
+*/

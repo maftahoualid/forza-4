@@ -1,6 +1,18 @@
 #ifndef _INITGAME_HH
 #define _INITGAME_HH
 
+union semun {
+        int val;
+        struct semid_ds *buf;
+        unsigned short *array;
+};
+
+struct matrix_dim {
+        long mtype;
+        int rows;
+        int cols;
+};
+
 void check_args(int argc, char **argv);
 void handle_sigint();
 void handle_sigalrm();
@@ -14,14 +26,12 @@ void dt_shm(void *ptr_sh);
 void rm_shm(int shm_id);
 int get_sem(int sem_key, int sem_num);
 void ctl_sem(int sem_id, int sem_num);
-void wait_sem(int sem_id);
-void signal_sem(int sem_id);
+void wait_sem(int sem_id, int sem_num);
+void signal_sem(int sem_id, int sem_num);
 void forza4(int sem_id, int* shm_ptr, int rows, int cols);
-
-union semun {
-        int val;
-        struct semid_ds *buf;
-        unsigned short *array;
-};
+int check_winner(int* shm_ptr, int rows, int cols);
+//int get_msq(int msq_key);
+//void send_msg(int msq_id, struct matrix_dim* dim);
+//void receive_msg(int msq_id, struct matrix_dim* dim);
 
 #endif
