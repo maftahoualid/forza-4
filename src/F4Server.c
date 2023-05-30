@@ -33,7 +33,7 @@ int main(int argc, char **argv) {
     int msq_key; // CHIAVE CODA MESSAGGI //
     int msq_id; // ID CODA MESSAGGI //
 
-
+    /* =========== memoria condivisa =========== */
     // CREO UNA CHIAVE PER LA MEMORIA CONDIVISA //
     shm_key = ftok("../.",'a');
     printf("[SERVER DEBUG] shm_key: %d\n",shm_key);
@@ -44,13 +44,13 @@ int main(int argc, char **argv) {
     shm_ptr = at_shm(shm_id, 0);
     printf("[SERVER DEBUG] shm_ptr: %p\n", shm_ptr);
 
-
+    /* ======= matrice ======= */
     // INIZIALIZZO LA MATRICE //
     init_matrix(shm_ptr,rows,cols);
     // STAMPO LA MATRICE // 
     print_matrix(shm_ptr,rows,cols);
 
-
+    /* =========== set di semafori =========== */
     // CREO UNA CHIAVE PER IL SET DI SEMAFORI //
     sem_key = ftok("../.",'b');
     printf("[SERVER DEBUG] sem_key: %d\n", sem_key);
@@ -59,8 +59,6 @@ int main(int argc, char **argv) {
     printf("[SERVER DEBUG] sem_id: %d\n", sem_id);
     // INIZIALIZZO IL SET DI SEMAFORI //
     ctl_sem(sem_id,sem_num);
-
-
     
     
     // ASPETTO IL PRIMO CLIENT // 
@@ -78,10 +76,6 @@ int main(int argc, char **argv) {
     msq_id = msgget(msq_key, IPC_CREAT | 0666 );
     // INVIO IL MESSAGGIO //
     msgsnd(msq_id,&dim1,sizeof(int)*2,0);
-    
-    
-    // SBLOCCO IL PRIMO CLIENT [SIGNAL 1] //
-    signal_sem(sem_id, 1);
 
     
     // ASPETTO IL SECONDO CLIENT //
@@ -110,7 +104,6 @@ int main(int argc, char **argv) {
 
     // RIMUOVO LA MEMORIA CONDIVISA // 
     rm_shm(shm_id);
-
 
     return 0;
 }

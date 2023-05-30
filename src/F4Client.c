@@ -22,7 +22,7 @@ int main(){
     int msq_id; // ID CODA MESSAGGI //
 
 
-    int rows, cols;
+    // int rows, cols;
 
 
     // CREO UNA CHIAVE PER IL SET DI SEMAFORI //
@@ -37,12 +37,6 @@ int main(){
     signal_sem(sem_id, 0);
     // CLIENT CREATO //
     printf("[CLIENT DEBUG]: Client creato\n");
-
-
-    // MI BLOCCO PER ASPETTARE IL MESSAGGIO //
-    wait_sem(sem_id, 1);
-    // IL SERVER MI HA SBLOCCATO //
-
 
     // CREO LA STRUTTURA PER SALVARE IL MESSAGGIO //
     struct matrix_dim dim1;
@@ -64,7 +58,7 @@ int main(){
 
 
     // FACCIO IL DETACH DELLA MEMORIA CONDIVISA // 
-    dt_shm(shm_id);
+    dt_shm(shm_ptr);
     
     return 0;
 }
