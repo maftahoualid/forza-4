@@ -6,7 +6,7 @@
 #include "../headers/init_game.h"
 
 int main(){
-
+ 
 
     int shm_key; // CHIAVE MEMORIA CONDIVISA //
     int *shm_ptr; // PUNTATORE A MEMORIA CONDIVISA //

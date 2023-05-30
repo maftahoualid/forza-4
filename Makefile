@@ -32,5 +32,5 @@ all: clean
 	
 	echo "compilazione ok!"
 clean:
-	ipcrm -a
+	ipcrm -a 
 	rm -f /out/*
