@@ -4,6 +4,12 @@
         "init_game.h": "c",
         "stdlib.h": "c",
         "err_exit.h": "c",
-        "unistd.h": "c"
+        "unistd.h": "c",
+        "base.h": "c",
+        "ms_queue.h": "c",
+        "signal.h": "c",
+        "msg.h": "c",
+        "sh_mem.h": "c",
+        "stdio.h": "c"
     }
 }

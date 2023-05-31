@@ -1,14 +1,19 @@
-// cd /home/xwally/Scrivania/forza-4
-// gcc -Wall -Wextra ./src/F4Server.c ./src/functions/err_exit.c ./src/functions/init_game.c -o ./F4Server.out && ./F4Server.out 6 7 x o
 
-#include "../headers/base.h"
-#include "../headers/init_game.h"
+#include <signal.h>
+#include <sys/msg.h>
+#include <sys/shm.h>
+#include <sys/sem.h>
+
+
 #include "../headers/err_exit.h"
-
+#include "../headers/hndl_signals.h"
+#include "../headers/init_game.h"
+#include "../headers/ms_queue.h"
+#include "../headers/mtrx.h"
+#include "../headers/sh_mem.h"
+#include "../headers/smfr.h"
 
 int main(int argc, char **argv) {
- 
-
     /* CONTROLLO VALIDITA' DEI PARAMETRI */
     check_args(argc, argv);
     /* DO UN NOME AI PARAMETRI */
@@ -41,7 +46,7 @@ int main(int argc, char **argv) {
     shm_id = get_shm(shm_key, sizeof(int[rows][cols]));
     printf("[SERVER DEBUG] shm_id: %d\n",shm_id);
     // FACCIO L'ATTACH DELLA MEMORIA //
-    shm_ptr = at_shm(shm_id, 0);
+    shm_ptr = at_shm(shm_id);
     printf("[SERVER DEBUG] shm_ptr: %p\n", shm_ptr);
 
     /* ======= matrice ======= */

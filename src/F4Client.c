@@ -1,28 +1,26 @@
-// cd /home/xwally/Scrivania/forza-4
-// gcc -Wall -Wextra ./src/F4Client.c ./src/functions/err_exit.c ./src/functions/init_game.c -o ./F4Client.out && ./F4Client.out 
 
-#include "../headers/base.h"
+#include <signal.h>
+#include <sys/msg.h>
+#include <sys/shm.h>
+#include <sys/sem.h>
+
 #include "../headers/err_exit.h"
+#include "../headers/hndl_signals.h"
 #include "../headers/init_game.h"
+#include "../headers/ms_queue.h"
+#include "../headers/mtrx.h"
+#include "../headers/sh_mem.h"
+#include "../headers/smfr.h"
 
 int main(){
- 
-
     int shm_key; // CHIAVE MEMORIA CONDIVISA //
     int *shm_ptr; // PUNTATORE A MEMORIA CONDIVISA //
     int shm_id; // ID MEMORIA CONDIVISA //
-
-
     int sem_key; // CHIAVE SET SEMAFORI //
     int sem_id; // ID SET SEMAFORI //
     int sem_num = 10; // NUMERO SEMAFORI //
-
-
     int msq_key; // CHIAVE CODA MESSAGGI //
     int msq_id; // ID CODA MESSAGGI //
-
-
-    // int rows, cols;
 
 
     // CREO UNA CHIAVE PER IL SET DI SEMAFORI //
@@ -54,7 +52,7 @@ int main(){
     shm_key = ftok("../.",'a');
     shm_id = get_shm(shm_key, sizeof(int[dim1.rows][dim1.cols]));
     // LA MAPPO SUL PROCESSO CLIENT //
-    shm_ptr = at_shm(shm_id, 0);
+    shm_ptr = at_shm(shm_id);
 
 
     // FACCIO IL DETACH DELLA MEMORIA CONDIVISA // 
