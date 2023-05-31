@@ -55,6 +55,3 @@ all: clean
 	-o "./exe/F4Client"
 
 	echo "compilazione ok!"
-clean:
-	ipcrm -a 
-	rm -f /out/*
