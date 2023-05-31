@@ -28,6 +28,7 @@ all: clean
 	gcc -c -Wall -Wextra "./src/functions/mtrx.c" -o "./obj/mtrx.obj"
 	gcc -c -Wall -Wextra "./src/functions/sh_mem.c" -o "./obj/sh_mem.obj"
 	gcc -c -Wall -Wextra "./src/functions/smfr.c" -o "./obj/smfr.obj"
+	gcc -c -Wall -Wextra "./src/functions/play.c" -o "./obj/play.obj"
 
 	# genero l'eseguibile server
 	gcc -Wall -Wextra "./obj/server/F4Server.obj" \
@@ -38,6 +39,7 @@ all: clean
 	"./obj/mtrx.obj" \
 	"./obj/sh_mem.obj" \
 	"./obj/smfr.obj" \
+	"./obj/play.obj" \
 	-o "./exe/F4Server"
 
 	# genero l'eseguibile client
@@ -49,6 +51,7 @@ all: clean
 	"./obj/mtrx.obj" \
 	"./obj/sh_mem.obj" \
 	"./obj/smfr.obj" \
+	"./obj/play.obj" \
 	-o "./exe/F4Client"
 
 	echo "compilazione ok!"

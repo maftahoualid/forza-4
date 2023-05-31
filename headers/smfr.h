@@ -13,8 +13,9 @@ union semun {
 };
 
 int get_sem(int sem_key, int sem_num);
-void ctl_sem(int sem_id, int sem_num);
-void wait_sem(int sem_id, int sem_num);
-void signal_sem(int sem_id, int sem_num);
+void init_sem(int sem_id);
+void dec_sem(int sem_id, int sem_num);
+void inc_sem(int sem_id, int sem_num);
+void zero_sem(int sem_id, int sem_num);
 
 #endif

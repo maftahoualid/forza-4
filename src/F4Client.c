@@ -21,7 +21,7 @@ int main(){
     int sem_num = 10; // NUMERO SEMAFORI //
     int msq_key; // CHIAVE CODA MESSAGGI //
     int msq_id; // ID CODA MESSAGGI //
-
+    int mossa; // LA COLONNA DOVE INSERIRE IL DISCHETTO //
 
     // CREO UNA CHIAVE PER IL SET DI SEMAFORI //
     sem_key = ftok("../.",'b');
@@ -31,29 +31,39 @@ int main(){
     printf("[CLIENT DEBUG] shm_id: %d\n",sem_id);
 
 
-    // SBLOCCO IL SERVER [SIGNAL 0] //
-    signal_sem(sem_id, 0);
-    // CLIENT CREATO //
     printf("[CLIENT DEBUG]: Client creato\n");
+    dec_sem(sem_id,0);
 
     // CREO LA STRUTTURA PER SALVARE IL MESSAGGIO //
-    struct matrix_dim dim1;
+    struct matrix_dim dim;
     // MI COLLEGO ALLA CODA DI MESSAGGI //
     msq_key = ftok("../.", 'c');
-    msq_id = msgget(msq_key, IPC_CREAT | 0666 );
+    msq_id = get_msq(msq_key);
     // RICEVO IL MESSAGGIO INVIATO DAL SERVER //
     // [!!!] una volta letto un messaggio, questo viene tolto dalla coda
-    msgrcv(msq_id,&dim1,sizeof(int)*2,(long)1.0,0);
+    printf("[CLIENT DEBUG] aspetto il messaggio\n");
+    receive_msg(msq_id,&dim);
     // STAMPO I CAMPI RIGA E COLONNA DEL MESSAGGIO RICEVUTO
-    printf("[CLIENT DEBUG] [%d,%d]",dim1.rows,dim1.cols);
-
+    printf("[CLIENT DEBUG] messaggio ricevuto : [%d,%d] [%c]\n",dim.rows,dim.cols,dim.sym);
 
     // MI COLLEGO ALLA MEMORIA CONDIVISA 
     shm_key = ftok("../.",'a');
-    shm_id = get_shm(shm_key, sizeof(int[dim1.rows][dim1.cols]));
+    shm_id = get_shm(shm_key, sizeof(int[dim.rows][dim.cols]));
     // LA MAPPO SUL PROCESSO CLIENT //
     shm_ptr = at_shm(shm_id);
 
+    // STAMPO LA MATRICE // 
+    // print_matrix(shm_ptr,dim.rows,dim.cols);
+
+
+    do {
+    // CHIEDO L'INSERIMENTO DELLA MOSSA //
+    printf("Inserisci una colonna (tra 0 e %d): ",dim.cols-1);
+    // SALVO LA MOSSA //
+    scanf("%d", &mossa);
+    } while(mossa<0 || mossa>=dim.cols);
+
+    
 
     // FACCIO IL DETACH DELLA MEMORIA CONDIVISA // 
     dt_shm(shm_ptr);

@@ -10,6 +10,7 @@
         "signal.h": "c",
         "msg.h": "c",
         "sh_mem.h": "c",
-        "stdio.h": "c"
+        "stdio.h": "c",
+        "smfr.h": "c"
     }
 }

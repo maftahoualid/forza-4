@@ -9,6 +9,7 @@ struct matrix_dim {
         long mtype;
         int rows;
         int cols;
+        char sym;
 };
 
 int get_msq(int msq_key);
