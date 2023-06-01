@@ -6,7 +6,7 @@
 
 .SILENT:
 
-all: clean
+all:
 
 	# rimuovo tutti i semafori/code di messaggi/memorie condivise
 	ipcrm -a

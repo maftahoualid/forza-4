@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <unistd.h>
+#include <signal.h>
 #include "init_game.h"
 
 void handle_sigint();

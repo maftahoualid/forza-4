@@ -18,7 +18,7 @@ int main(int argc, char **argv) {
 
     // CONTROLLO VALIDITA' DEI PARAMETRI //
     printf("[SERVER DEBUG] CONTROLLO VALIDITA' DEI PARAMETRI\n");
-    check_args(argc, argv);
+    check_server_args(argc, argv);
     // DO UN NOME AI PARAMETRI //
     int rows = atoi(argv[1]);
     int cols = atoi(argv[2]);
