@@ -2,6 +2,7 @@
 
 int sigint_count = 0;
 void handle_sigint(){
+    signal(SIGALRM, handle_sigalrm); //GESTISCO IL TIMER PER IL SECONDO CTRL-C
     if(sigint_count==0){
         printf("[WARNING]: CTRL-C 1: premi un'altra volta per terminare il server\n");
         sigint_count++;

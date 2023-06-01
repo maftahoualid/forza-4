@@ -1,0 +1,59 @@
+x- dimensione campo : almeno 5*5
+- gioco a turni
+- vince il primo che mette 4 gettoni in verticale/orizzontale
+(- si vince anche in diagonale)
+
+server: predispone il gioco (memoria condivisa, semafori, ...), arbitra la partita, controlla la vincita
+
+client: fa giocare il giocatore, raccoglie la mossa, visualizza il rettangolo di gioco
+
+client e server:
+- verificare che le IPC siano state create
+- rimuoverle in uscita da parte del gioco
+- controllo dei casi particolari
+
+
+SERVER:
+x- definisce la dimensione del campo in base ai parametri passati da terminale
+x- i parametri aggiuntivi saranno le forme dei gettoni
+x- i parametri aggiuntivi dovranno essere comunicati ai client
+x- esecuzione server con numero parametri diverso : stampa a video del utilizzo del comando
+- server gestisce errori tipo pre-esistenza di memoria condivisa o semafori
+- server termina correttamente in caso di doppia pressione di ctrl-c
+- alla prima pressione di ctrl-c indica che una seconda pressione determina la terminazione del gioco
+- correttamente : nel senso che avvisa i processi dei giocatori che il gioco è stato terminato dall'esterno (segnale) e rimuove correttamente le IPC
+- dopo ogni giocata controlla e notifica al client se il giocatore ha vinto
+- se la matrice è piena e nessuno ha vinto, deve notificare ai client che hanno pareggiato
+- se un giocatore vince scegli se:
+ - proporre una nuova partita
+ - terminare la partita per tutti
+ - il server notificherà la vittoria all'altro client per abbandono
+(- gestione segnali aggiuntivi, es: chiusura del terminale server )
+
+(- se si gioca in automatico il server si duplica eseguendo una versione del client che genera una mossa casuale, poi il secondo server termina )
+( - il bot (versione del client generata dal secondo server) seleziona una colonna random e gioca)
+( - se la colonna è piena ne sceglie un'altra)
+
+(- quando si lancia il server, viene definito un numero di secondi di timeout)
+(- il client deve giocare entro questi secondi )
+(- altrimenti scegli se: )
+( - non far giocare il client e passare all'altro giocatore )
+( - far perdere a tavolino il giocatore e vincere a tavolino l'altro )
+
+
+CLIENT:
+- riceve il nome del giocatore come parametro dal terminale
+- rimane in attesa (di essere notificato) che venga trovato (dal server) il secondo giocatore
+- stampa a ogni giro la matrice aggiornata
+- chiede al giocatore su quale colonna inserire il gettone
+- se la colonna è piena deve notificarlo al giocatore
+- la pressione di ctrl-c fa perdere per abbandono 
+- se si abbandona la partita : notifica la cosa al server, poi termina
+(- gestione segnali aggiuntivi, es: chiusura del terminale client ) 
+
+(- il client può giocare in modo automatico:)
+(- per giocarci, il client deve lanciare: "./F4Client nome *")
+(- quando viene lanciato così: il client informa il server )
+
+
+

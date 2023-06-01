@@ -11,6 +11,7 @@
         "msg.h": "c",
         "sh_mem.h": "c",
         "stdio.h": "c",
-        "smfr.h": "c"
+        "smfr.h": "c",
+        "hndl_signals.h": "c"
     }
 }

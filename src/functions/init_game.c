@@ -1,6 +1,6 @@
 #include "../../headers/init_game.h"
 
-void check_args(int argc, char **argv){
+void check_server_args(int argc, char **argv){
     if(argc!=5){
         usage();
         err_exit("[ERROR]: Mi hai passato un numero errato di argomenti.\n");
@@ -16,6 +16,17 @@ void check_args(int argc, char **argv){
     else if(strlen(argv[3]) != sizeof(char) || strlen(argv[4]) != sizeof(char)){
         usage();
         err_exit("[ERROR]: i simboli devono essere lunghi 1 carattere ciascuno.\n");
+    } else if( strcmp(argv[3],argv[4])==0 ){
+        err_exit("[ERROR]: i simboli devono essere diversi.\n");
+    } 
+}
+
+void check_client_args(int argc, char **argv){
+    if(argc!=2){
+        usage();
+        err_exit("[ERROR]: Mi hai passato un numero errato di argomenti.\n");
+    } else if( strcmp(argv[1],"*")==0 ){
+        printf("(opz) <Notifica il server di duplicarsi e lanciare una copia automatica del client>");
     }
 }
 
