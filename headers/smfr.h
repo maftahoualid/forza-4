@@ -12,6 +12,7 @@ union semun {
         unsigned short *array;
 };
 
+int create_sem(int sem_key, int sem_num);
 int get_sem(int sem_key, int sem_num);
 void init_sem(int sem_id);
 void dec_sem(int sem_id, int sem_num);

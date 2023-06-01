@@ -1,10 +1,19 @@
 #include "../../headers/sh_mem.h"
 
+int create_shm(int shm_key, int size) {
+    errno=0;
+    int shm_id = shmget(shm_key, size, IPC_CREAT | IPC_EXCL | 0666 );
+    if (shm_id == -1){
+        if(errno == EEXIST){ err_exit("[ERROR]: memoria condivisa già esistente.\n"); }
+        err_exit("[ERROR]: nella creazione della memoria.\n");
+    }
+    return shm_id;
+}
+
 int get_shm(int shm_key, int size) {
     errno=0;
-    int shm_id = shmget(shm_key, size, IPC_CREAT /*| IPC_EXCL*/ | 0666 );
+    int shm_id = shmget(shm_key, size, 0666 );
     if (shm_id == -1){
-        //if(errno == EEXIST){ err_exit("[ERROR]: memoria condivisa già esistente.\n"); }
         err_exit("[ERROR]: nella creazione della memoria.\n");
     }
     return shm_id;

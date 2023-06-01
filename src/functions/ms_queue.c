@@ -1,5 +1,15 @@
 #include "../../headers/ms_queue.h"
 
+int create_msq(int msq_key){
+    errno = 0;
+    int msq_id = msgget(msq_key, IPC_CREAT | IPC_EXCL | 0666);
+    if(msq_id==-1){
+        if(errno == EEXIST){ err_exit("[ERROR]: coda di messaggi già esistente.\n"); }
+        err_exit("[ERROR] msgget");
+    }
+    return msq_id;
+}
+
 int get_msq(int msq_key){
     int msq_id = msgget(msq_key, IPC_CREAT | 0666);
     if(msq_id==-1){
@@ -8,16 +18,3 @@ int get_msq(int msq_key){
     return msq_id;
 }
 
-void send_msg(int msq_id, struct matrix_dim* dim){
-    int size = sizeof(int) + sizeof(int) + sizeof(char);
-    if(msgsnd(msq_id,dim,size,0)==-1){
-        err_exit("[ERROR] msgsnd");
-    }
-}
-
-void receive_msg(int msq_id, struct matrix_dim* dim){
-    int size = sizeof(int) + sizeof(int) + sizeof(char);
-    if(msgrcv(msq_id,dim,size,(long)1.0,0)==-1){
-        err_exit("[ERROR] msgsnd");
-    }
-}

@@ -2,11 +2,20 @@
 
 #define SEM_DIM 10
 
+int create_sem(int sem_key, int sem_num){
+    errno=0;
+    int sem_id = semget(sem_key,sem_num, IPC_CREAT | IPC_EXCL | 0777 );
+    if (sem_id==-1){
+        if(errno==EEXIST) { err_exit("ERRORE: set di semafori già esistente (Lancia prima il server e poi i client)");}
+        err_exit("[ERROR]: nella creazione del set di semafori.\n");
+    }
+    return sem_id;
+}
+
 int get_sem(int sem_key, int sem_num){
     errno=0;
     int sem_id = semget(sem_key,sem_num, IPC_CREAT | 0777 );
     if (sem_id==-1){
-        //if(errno==EEXIST) { err_exit("ERRORE: set di semafori già esistente");}
         err_exit("[ERROR]: nella creazione del set di semafori.\n");
     }
     return sem_id;
@@ -15,7 +24,7 @@ int get_sem(int sem_key, int sem_num){
 void init_sem(int sem_id){
     errno=0;
     union semun arg;
-    unsigned short arr[SEM_DIM] = {2,0};
+    unsigned short arr[SEM_DIM] = {1,1,1,1};
     arg.array = arr;
     
     int sem_ctl = semctl(sem_id, SEM_DIM, SETALL, arg);

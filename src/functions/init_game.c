@@ -27,6 +27,8 @@ void check_client_args(int argc, char **argv){
         err_exit("[ERROR]: Mi hai passato un numero errato di argomenti.\n");
     } else if( strcmp(argv[1],"*")==0 ){
         printf("(opz) <Notifica il server di duplicarsi e lanciare una copia automatica del client>");
+    } else if ( strlen(argv[1])>50 ){
+        err_exit("[ERROR]: Il nome del giocatore è troppo lungo!");
     }
 }
 

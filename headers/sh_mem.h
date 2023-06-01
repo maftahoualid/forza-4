@@ -7,6 +7,7 @@
 #include <sys/shm.h>
 #include "err_exit.h"
 
+int create_shm(int shm_key, int size);
 int get_shm(int shm_key, int size);
 void *at_shm(int shm_id);
 void dt_shm(void *ptr_sh);

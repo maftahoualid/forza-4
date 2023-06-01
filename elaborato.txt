@@ -18,7 +18,9 @@ x- definisce la dimensione del campo in base ai parametri passati da terminale
 x- i parametri aggiuntivi saranno le forme dei gettoni
 x- i parametri aggiuntivi dovranno essere comunicati ai client
 x- esecuzione server con numero parametri diverso : stampa a video del utilizzo del comando
-- server gestisce errori tipo pre-esistenza di memoria condivisa o semafori
+x- server gestisce errori tipo pre-esistenza di memoria condivisa (nel mio caso: client non può creare memoria prima del server)
+x- server gestisce errori tipo pre-esistenza di semafori (nel mio caso: errore se il client crea il set di semafori prima del server)
+x- server gestisce errori tipo pre-esistenza di code di messaggi (nel mio caso: client non può creare coda di messaggi prima del server)
 - server termina correttamente in caso di doppia pressione di ctrl-c
 - alla prima pressione di ctrl-c indica che una seconda pressione determina la terminazione del gioco
 - correttamente : nel senso che avvisa i processi dei giocatori che il gioco è stato terminato dall'esterno (segnale) e rimuove correttamente le IPC

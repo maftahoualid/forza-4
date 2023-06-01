@@ -7,9 +7,7 @@ void forza4(int sem_id, int* shm_ptr, int rows, int cols){
     int winner=0;
 
     while (winner==0){
-        printf(" sem 0 : %d\n", semctl(sem_id,0,GETVAL));
-        dec_sem(sem_id, 1);
-        printf(" sem 0 : %d\n", semctl(sem_id,0,GETVAL));
+        dec_sem(sem_id, 2);
     }
 
     do {
