@@ -34,28 +34,27 @@ void forza4(int sem_id, int* shm_ptr, int rows, int cols){
 }
 
 int check_winner(int* shm_ptr, int rows, int cols){
-    int (*matrix)[cols] = (void*)shm_ptr;
     int i,j;
 
     // ROW WIN
     for (i=0;i<rows;i++){
         for(j=0; j<cols-4;j++){
-            int elem = matrix[i][j];
+            int elem = *(shm_ptr+i*cols+j);
             int row_win = ((elem!=0)&&
-                          (elem==matrix[i][j+1])&&
-                          (elem==matrix[i][j+2])&&
-                          (elem==matrix[i][j+3])) ? 1 : 0;
+                          (elem==*(shm_ptr+i*cols+j+1))&&
+                          (elem==*(shm_ptr+i*cols+j)+2)&&
+                          (elem==*(shm_ptr+i*cols+j)+3) ? 1 : 0);
             if(row_win==1) return elem;
         }
     }
     // COL WIN
     for (i=0;i<rows-4;i++){
         for(j=0; j<cols;j++){
-            int elem = matrix[i][j];
+            int elem = *(shm_ptr+i*cols+j);
             int row_win = ((elem!=0)&&
-                          (elem==matrix[i+1][j])&&
-                          (elem==matrix[i+2][j])&&
-                          (elem==matrix[i+3][j])) ? 1 : 0;
+                          (elem==*(shm_ptr+i*(cols+1)+j))&&
+                          (elem==*(shm_ptr+i*(cols+2)+j))&&
+                          (elem==*(shm_ptr+i*(cols+3)+j)) ? 1 : 0);
             if(row_win==1) return elem;
         }
     }

@@ -12,6 +12,7 @@ struct matrix_dim {
         int cols;
         char sym1;
         char sym2;
+        int tocca_a_me;
 };
 
 struct player {
@@ -20,11 +21,17 @@ struct player {
         char name[50];
 };
 
+struct turno {
+    long mtype;
+    int turno;
+    int win;
+};
+
 int create_msq(int msq_key);
 int get_msq(int msq_key);
 void send_dim(int msq_id, struct matrix_dim* dim);
-void send_player(int msq_id, struct player* dim);
 void receive_dim(int msq_id, struct matrix_dim* dim);
+void send_player(int msq_id, struct player* dim);
 void receive_player(int msq_id, struct player* dim);
 
 

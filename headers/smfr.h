@@ -18,5 +18,6 @@ void init_sem(int sem_id);
 void dec_sem(int sem_id, int sem_num);
 void inc_sem(int sem_id, int sem_num);
 void zero_sem(int sem_id, int sem_num);
+void semOp(int semid, unsigned short sem_num, short sem_op);
 
 #endif

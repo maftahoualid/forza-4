@@ -13,123 +13,165 @@
 #include "../headers/smfr.h"
 
 int main(int argc, char **argv){
-    int shm_key; // CHIAVE MEMORIA CONDIVISA //
-    int *shm_ptr; // PUNTATORE A MEMORIA CONDIVISA //
-    int shm_id; // ID MEMORIA CONDIVISA //
-    int sem_key; // CHIAVE SET SEMAFORI //
-    int sem_id; // ID SET SEMAFORI //
-    int sem_num = 10; // NUMERO SEMAFORI //
-    int msq_key; // CHIAVE CODA MESSAGGI //
-    int msq_id; // ID CODA MESSAGGI //
-    int row=0, col=0; // LA COLONNA DOVE INSERIRE IL DISCHETTO //
+
+    {
+        check_client_args(argc,argv);
+    } // args
+
+    printf("\n\n\n\nINIZIO\n");
+
+    int shm_key, *shm_ptr, shm_id;
+    int sem_key, sem_id, sem_num = 10;
+    int msq_key, msq_id;
+
+    int row=0, col=0;
+
     struct matrix_dim dim; // STRUTTURA PER SALVARE IL MESSAGGIO //
+    int (*matrix)[dim.cols];
+
     struct player player;
-    int turno = 1;
-    // SEMAFORI: 1,1,1,1,0 //
+    char name[50];
 
-    { /* ARGOMENTI */
-    check_client_args(argc,argv);
-    }
+    struct turno turno;
 
-    { /* SEMAFORI */
-    // CREO UNA CHIAVE PER IL SET DI SEMAFORI //
-    sem_key = ftok("../.",'b');
-    printf("[CLIENT DEBUG] shm_key: %d\n",sem_key);
-    // CREO IL SET DI SEMAFORI //
-    sem_id = get_sem(sem_key,sem_num);
-    printf("[CLIENT DEBUG] shm_id: %d\n",sem_id);
+    struct sembuf sops; // sem_num, sem_op, flg
+    unsigned short sem_values[sem_num];
+    union semun arg;
+    arg.array = sem_values;
 
-    printf("[CLIENT DEBUG]: Client creato\n");
-    // CLIENT1: 1,1,1,1,0
-    // CLIENT2: 0,1,1,1,0
-/**/dec_sem(sem_id,0);
-    // 1,1,1,1
-    }
+    int size=0;
 
-    { /* MESSAGGIO */
-    // MI COLLEGO ALLA CODA DI MESSAGGI //
-    msq_key = ftok("../.", 'c');
-    msq_id = get_msq(msq_key);
-    // RICEVO IL MESSAGGIO INVIATO DAL SERVER //
-    // [!!!] una volta letto un messaggio, questo viene tolto dalla coda
-    printf("[CLIENT DEBUG] aspetto il messaggio\n");
-/**/int size = sizeof(struct matrix_dim)-sizeof(long);
-    if(msgrcv(msq_id,&dim,size,(long)1,0)==-1){
-        err_exit("[ERROR] msgsnd");
-    }
-    // STAMPO I CAMPI RIGA E COLONNA DEL MESSAGGIO RICEVUTO
-    printf("[CLIENT DEBUG] messaggio ricevuto : [%d,%d] [%c]\n",dim.rows,dim.cols,dim.sym1);
-    }
 
-    { /* MEMORIA CONDIVISA */
-    // MI COLLEGO ALLA MEMORIA CONDIVISA 
-    shm_key = ftok("../.",'a');
-    shm_id = get_shm(shm_key, sizeof(int[dim.rows][dim.cols]));
-    // LA MAPPO SUL PROCESSO CLIENT //
-    shm_ptr = at_shm(shm_id);
-    }
+    {
+        printf("\n---- creazione semafori ----\n");
+        sem_key = ftok("../.",'b'); // key semafori
+        printf("sem_key : %d\n", sem_key);
+        sem_id = get_sem(sem_key,sem_num); // get sem
+        printf("sem_id : %d\n", sem_id);
+        printf("---- creazione semafori ----\n");
+    } // sem
 
-    int (*matrix)[dim.cols] = (void*)shm_ptr;
+    {
+        semctl(sem_id, 0, GETALL, arg);
+        printf("\n---- semafori ----\n");
+        for (int i = 0; i < sem_num; i++) {
+            printf("SEM %d: [%d]\n", i, sem_values[i]);
+        };
+        printf("---- semafori ----\n");
+    } // stampa set di semafori
+
+    {
+        sops = (struct sembuf) {0, +1, 0};
+        if (semop(sem_id, &sops, 1)) {
+            err_exit("[ERROR] semop");
+        };
+    } // sem[0]++
+
+    {
+        printf("\n---- creazione coda di messaggi ----\n");
+        msq_key = ftok("../.", 'c');
+        printf("msq_key : %d\n", msq_key);
+        msq_id = get_msq(msq_key);
+        printf("msq_id : %d\n",msq_id);
+        printf("---- creazione coda di messaggi ----\n");
+    } // msq
+
+    {
+        printf("\n---- ricezione messaggio ----\n");
+        size = sizeof(struct matrix_dim)-sizeof(long);
+        if(msgrcv(msq_id,&dim,size,(long)1,0)==-1){
+            err_exit("[ERROR] msgsnd");
+        }
+        printf("[%d,%d] [%c,%c]\n",dim.rows,dim.cols,dim.sym1,dim.sym2);
+        printf("pid: %d, %s tocca a me\n", getpid(), (dim.tocca_a_me==1)?"":"NON");
+        printf("---- ricezione messaggio ----\n");
+    } // ricevo i messaggi (matrix_dim dim1 e matrix_dim dim2)
+
+    {
+        printf("\n---- creazione memoria condivisa ----\n");
+        shm_key = ftok("../.",'a');
+        printf("shm_key : %d\n", shm_key);
+        shm_id = get_shm(shm_key, sizeof(int[dim.rows][dim.cols]));
+        printf("shm_id : %d\n", shm_id);
+        shm_ptr = at_shm(shm_id);
+        printf("shm_ptr : %p\n",shm_ptr);
+        matrix = (void*)shm_ptr;
+        printf("matrix : %p\n",matrix);
+        printf("---- creazione memoria condivisa ----\n");
+
+    } // shm
 
     do{
 
-        { /* creo il messaggio */
-        player.mtype=(long)2;
-        printf("TIPO: %ld\n", player.mtype);
-        strcpy(player.name, argv[1]);
-        printf("NOME: %s\n", player.name);
-        player.sym=dim.sym1;
-        printf("SIMBOLO MIO: %c\n", player.sym);
-        printf("SIMBOLO ALTRO: %c\n", dim.sym2);
-        }
+        {
+            size = sizeof(struct turno)-sizeof(long);
+            if(msgrcv(msq_id,&turno,size,(long)3,0)==-1){
+                err_exit("[ERROR] msgsnd");
+            }
+        } // ricevo tocca a me
 
-        {// CHIEDO L'INSERIMENTO DELLA MOSSA //
-        do { 
-            printf("Inserisci una colonna (tra 1 e %d): ",dim.cols);
+        printf("turno: %d", turno.turno);
+
+        if(dim.tocca_a_me==-1){ {
+                sops = (struct sembuf) {1, -1, 0};
+                if (semop(sem_id, &sops, 1)) {
+                    err_exit("[ERROR] semop");
+                };
+            } // sem[1]--
+        } // mi blocco se non tocca a me
+
+        { do {
+            printf("\nInserisci una colonna (tra 0 e %d): ",dim.cols-1);
             // SALVO LA MOSSA //
             scanf("%d", &col);
-            if(matrix[0][col-1]==1){
+            if(*(shm_ptr+col-1)==1){
                 printf("La colonna è piena!\n");
             }
-            } while(col<1 || col>dim.cols || matrix[0][col-1]==1 );
-        }
-        
+            } while(col<0 || col>dim.cols-1 || *(shm_ptr+col-1)==1 );
+        } // inserisci colonna
 
-        {// posiziona il gettone //
-        for(row=dim.rows-1; row>0; row--){
-            if(matrix[row][col] == 0){
-                matrix[row][col] = turno;
-                break;
+
+        { for (row = dim.rows - 1; row >= 0; row--) {
+                if (*(shm_ptr+row*dim.cols+col) == 0) {
+                    *(shm_ptr+row*dim.cols+col)  = getpid();
+                    break;
+                }
             }
-        }
-        for(int i=1; i<dim.rows; i++){
-            for(int j=1; j<dim.cols; j++){
-                if(semctl(sem_id,1,GETVAL)==1)
-                    printf("[ %c ]", dim.sym2 );
-                else if(matrix[i][j] == -turno)
-                    printf("[ %c ]", dim.sym1 );
-                else
-                    printf("[   ]");
+        } // faccio cadere il gettone
+
+        { for(int i=0; i<dim.rows; i++){
+                for(int j=0; j<dim.cols; j++){
+                    if( *(shm_ptr+i*dim.cols+j) ==0 )
+                        printf("[   ]");
+                    else if( *(shm_ptr+i*dim.cols+j) == getpid())
+                        printf("[ %c ]", dim.sym1 );
+                    else
+                        printf("[ %c ]", dim.sym2 );
+                }
+                printf("\n");
             }
-            printf("\n");
-        }
-        }
-        
-        int size = sizeof(struct player)-sizeof(long);
-        if(msgsnd(msq_id,&player,size,0)==-1){
-            err_exit("[ERROR] msgsnd");
-        }
-        // 0,1,1,1,0
-        // 0,0,1,1,0
-        dec_sem(sem_id,1);
-        // 0,1,1,1,0
+        } // stampo la matrice
 
-    } while(semctl(sem_id,3,GETVAL)==0);
-    // ... 1
+        print_matrix(shm_ptr,dim.rows,dim.cols);
 
-    {// FACCIO IL DETACH DELLA MEMORIA CONDIVISA // 
-    dt_shm(shm_ptr);
-    }
+        {
+            player = (struct player) {(long) 2, dim.sym1, *argv[1]};
+            size = sizeof(struct player) - sizeof(long);
+            if (msgsnd(msq_id, &player, size, 0) == -1) {
+                err_exit("[ERROR] msgsnd");
+            }
+        } // invio messaggio player
+
+        {
+            sops = (struct sembuf) {0, +1, 0};
+            if (semop(sem_id, &sops, 1)) {
+                err_exit("[ERROR] semop");
+            };
+        } // sem[0]++
+
+    } while(turno.win==0);
+
+    { dt_shm(shm_ptr); }
 
 
     return 0;

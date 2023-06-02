@@ -1,25 +1,16 @@
-
-# lancia dalla cartella forza4
-
-# io ce l'ho nel desktop: 
-# cd /home/$USER/desktop/forza-4
-
 .SILENT:
 
-all: 
+all:clean server_exe client_exe
 
-	# rimuovo tutti i semafori/code di messaggi/memorie condivise
-	ipcrm -a
-
-	# rimuovo tutti gli eseguibili
-	rm -f ./out/*
-	
+server_obj: funzioni_obj
 	# genero i file oggetto di F4Server
 	gcc -g3 -c -Wall -Wextra "./src/F4Server.c" -o "./obj/server/F4Server.obj"
-	
+
+client_obj:funzioni_obj
 	# genero i file oggetto di F4Client
 	gcc -g3 -c -Wall -Wextra "./src/F4Client.c" -o "./obj/client/F4Client.obj"
-	
+
+funzioni_obj:
 	# genero i file oggetto delle funzioni
 	gcc -g3 -c -Wall -Wextra "./src/functions/err_exit.c" -o "./obj/err_exit.obj"
 	gcc -g3 -c -Wall -Wextra "./src/functions/hndl_signals.c" -o "./obj/hndl_signals.obj"
@@ -30,6 +21,7 @@ all:
 	gcc -g3 -c -Wall -Wextra "./src/functions/smfr.c" -o "./obj/smfr.obj"
 	gcc -g3 -c -Wall -Wextra "./src/functions/play.c" -o "./obj/play.obj"
 
+server_exe:clean server_obj
 	# genero l'eseguibile server
 	gcc -g3 -Wall -Wextra "./obj/server/F4Server.obj" \
 	"./obj/err_exit.obj" \
@@ -42,6 +34,8 @@ all:
 	"./obj/play.obj" \
 	-o "./exe/F4Server"
 
+
+client_exe:clean client_obj
 	# genero l'eseguibile client
 	gcc -g3 -Wall -Wextra "./obj/client/F4Client.obj" \
 	"./obj/err_exit.obj" \
@@ -53,5 +47,8 @@ all:
 	"./obj/smfr.obj" \
 	"./obj/play.obj" \
 	-o "./exe/F4Client"
+	echo "Compilazione ok!"
 
-	echo "compilazione ok!"
+clean:
+	ipcrm -a
+	echo "Rimossi gli IPC"

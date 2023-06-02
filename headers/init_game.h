@@ -10,7 +10,6 @@
 
 void check_server_args(int argc, char **argv);
 void check_client_args(int argc, char **argv);
-void forza4(int sem_id, int* shm_ptr, int rows, int cols);
 int check_winner(int* shm_ptr, int rows, int cols);
 void usage();
 void close_server();

@@ -24,7 +24,7 @@ int get_sem(int sem_key, int sem_num){
 void init_sem(int sem_id){
     errno=0;
     union semun arg;
-    unsigned short arr[SEM_DIM] = {1,1,1,1};
+    unsigned short arr[SEM_DIM] = {0,0,1,1};
     arg.array = arr;
     
     int sem_ctl = semctl(sem_id, SEM_DIM, SETALL, arg);
@@ -61,4 +61,11 @@ void zero_sem(int sem_id, int sem_num){
         if(errno==EINTR) { printf("[WARNING]: system call interrotta, riprovo\n"); }
         semop_ret = semop(sem_id, &sem_op, 1);
     } while (semop_ret==-1 && errno==EINTR);
+}
+
+void semOp(int semid, unsigned short sem_num, short sem_op) {
+    struct sembuf sop = {.sem_num = sem_num, .sem_op = sem_op, .sem_flg = 0};
+
+    if (semop(semid, &sop, 1) == -1)
+        err_exit("semop failed");
 }

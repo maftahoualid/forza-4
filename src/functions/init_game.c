@@ -4,7 +4,7 @@ void check_server_args(int argc, char **argv){
     if(argc!=5){
         usage();
         err_exit("[ERROR]: Mi hai passato un numero errato di argomenti.\n");
-    } 
+    }
     else if(atoi(argv[1])<5){
         usage();
         err_exit("[ERROR]: La matrice non può avere meno di 5 righe.\n");
