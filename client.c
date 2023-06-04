@@ -16,9 +16,9 @@ int main(int argc, char** argv) { //
     } // check client args
 
     char *name = argv[1];
-    printf("name: %s\n",name);
+    //printf("name: %s\n",name);
 
-    printf("\n\n\n\nINIZIO\n");
+    //printf("\n\n\n\nINIZIO\n");
 
     int shm_key, shm_id;
     char *shm_ptr;
@@ -38,13 +38,13 @@ int main(int argc, char** argv) { //
 
     {
         sem_key = ftok("../.", 'a');
-        printf("sem_key : %d\n",sem_key);
+        // printf("sem_key : %d\n",sem_key);
     } // sem_key = ftok
 
     {
         errno = 0;
         sem_id = semget(sem_key, sem_num, 0777);
-        printf("sem_id : %d\n",sem_id);
+        // printf("sem_id : %d\n",sem_id);
         if (sem_id == -1) {
             if (errno == EEXIST) {
                 err_exit("SEMGET : EEXIST");
@@ -70,56 +70,56 @@ int main(int argc, char** argv) { //
 
     {
         sops = (struct sembuf) {0, +1, 0};
-        printf("inc(connessione client)\n");
+        // printf("inc(connessione client)\n");
         if (semop(sem_id, &sops, 1)) {
             err_exit("[ERROR] semop");
         };
-    } // signal(connessione_client)
+    } // signal(connessione_client) [0]++
 
     {
         msq_key = ftok("../.", 'b');
-        printf("msq_key : %d\n",msq_key);
+        // printf("msq_key : %d\n",msq_key);
     } // msq_key = ftok b
 
     {
         errno = 0;
         msq_id = msgget(msq_key, 0666);
-        printf("msq_id : %d\n",msq_id);
+        // printf("msq_id : %d\n",msq_id);
         if (msq_id == -1) {
             err_exit("[ERROR] msgget");
         }
     } // msq_id = msgget
 
     struct matrix matrice = {0,0,0};
-    printf("waiting to receive matrix\n");
+    // printf("waiting to receive matrix\n");
     {
         size = sizeof(struct matrix) - sizeof(long);
         if (msgrcv(msq_id, &matrice, size, (long) 1, 0) == -1) {
             err_exit("[ERROR] msgrcv");
         }
-        printf("receive: (mtype: %ld rows: %d cols: %d)\n",matrice.mtype,matrice.rows,matrice.cols);
+        // printf("receive: (mtype: %ld rows: %d cols: %d)\n",matrice.mtype,matrice.rows,matrice.cols);
         rows = matrice.rows;
         cols = matrice.cols;
     } // msgrcv (matrix)
 
     struct player_sym simbolo_giocatore = {1,' '};
-    printf("waiting to receive player sym\n");
+    // printf("waiting to receive player sym\n");
     {
         size = sizeof(struct player_sym) - sizeof(long);
         if (msgrcv(msq_id, &simbolo_giocatore, size, (long) 2, 0) == -1) {
             err_exit("[ERROR] msgsnd");
         }
-        printf("receive: (mtype: %ld sym: %c)\n",simbolo_giocatore.mtype,simbolo_giocatore.sym);
+        // printf("receive: (mtype: %ld sym: %c)\n",simbolo_giocatore.mtype,simbolo_giocatore.sym);
     } // msgrcv (player_sym)
 
     {
         shm_key = ftok("../.", 'c');
-        printf("shm_key: %d\n",shm_key);
+        // printf("shm_key: %d\n",shm_key);
     } // shm_key = ftok c
 
     {
         shm_id = shmget(shm_key, sizeof(char) * rows * cols,0777);
-        printf("shm_id: %d\n",shm_id);
+        // printf("shm_id: %d\n",shm_id);
         if (shm_id == -1) {
             err_exit("[SHMGET]\n");
         }
@@ -127,16 +127,17 @@ int main(int argc, char** argv) { //
 
     {
         shm_ptr = (char *) shmat(shm_id, NULL, 0);
-        printf("shm_ptr: %p\n",shm_ptr);
+        // printf("shm_ptr: %p\n",shm_ptr);
         if (shm_ptr == (void *)-1)
             err_exit("[SHMAT]\n");
         matrix = shm_ptr;
     } // shm_ptr = shmat
+    char (*mat)[cols] = (void*) matrix;
 
     {
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < cols; j++) {
-                printf("[%c]", (*(matrix+ ((i*cols)+j) )) );
+                printf("[%c]", mat[i][j] );
             }
             printf("\n");
         }
@@ -145,37 +146,42 @@ int main(int argc, char** argv) { //
     struct move mossa = (struct move) {(long) 3,0,' ',0,0};
     struct win vincita = {(long)4,0,0};
     do { //
+        if(vincita.value!=0){
+            printf("vincita.value: 1");
+            break;
+        } //
+
         {
-            printf("dec(turno)\n");
-            sops = (struct sembuf) {2, -1, 0};
+            // printf("dec(turno)\n");
+            sops = (struct sembuf) {1, -1, 0};
             if (semop(sem_id, &sops, 1)) {
                 err_exit("[SEMOP]");
             };
-        } // sem[2]-- blocco client
+        } // sem[1]-- blocco client
 
         { //
             do {
                 printf("\nInserisci una colonna (tra 1 e %d): ",cols);
                 // SALVO LA MOSSA //
                 scanf("%d", &col);
-                if(*(matrix+col-1)!=' '){
+                if(mat[0][col-1]!=' '){
                     printf("La colonna è piena!\n");
                 }
-            } while(col<1 || col>cols || *(matrix+col-1)!=' ' );
+            } while(col<1 || col>cols || mat[0][col-1]!=' ' );
         } // inserisci colonna
 
         { //
             for (int row = rows-1; row >= 0; row--) {
-                if (*(matrix+row*cols+col) == ' ') {
-                    *(matrix+row*cols+col)  = simbolo_giocatore.sym;
+                if (mat[row][col-1] == ' ') {
+                    mat[row][col-1]  = simbolo_giocatore.sym;
                     mossa.sym=simbolo_giocatore.sym;
-                    printf("sym: %c\n",mossa.sym);
+                    // printf("sym: %c\n",mossa.sym);
                     mossa.pid=getpid();
-                    printf("pid: %d\n",mossa.pid);
+                    // printf("pid: %d\n",mossa.pid);
                     mossa.row=row;
-                    printf("row: %d\n",mossa.row);
+                    // printf("row: %d\n",mossa.row);
                     mossa.col=col;
-                    printf("col: %d\n",mossa.col);
+                    // printf("col: %d\n",mossa.col);
                     break;
                 }
             }
@@ -184,7 +190,7 @@ int main(int argc, char** argv) { //
         {
             for (int i = 0; i < rows; i++) {
                 for (int j = 0; j < cols; j++) {
-                    printf("[%c]", (*(matrix+ ((i*cols)+j) )) );
+                    printf("[%c]", mat[i][j] );
                 }
                 printf("\n");
             }
@@ -195,25 +201,25 @@ int main(int argc, char** argv) { //
             if (msgsnd(msq_id, &mossa, size, 0) == -1) {
                 err_exit("[MSGSND]");
             }
-            printf("send: (mtype: %ld sym: %c pid: %d row: %d col: %d)\n",mossa.mtype,mossa.sym,mossa.pid,mossa.row,mossa.col);
+            // printf("send: (mtype: %ld sym: %c pid: %d row: %d col: %d)\n",mossa.mtype,mossa.sym,mossa.pid,mossa.row,mossa.col);
         } // msgsnd (move)
 
-        printf("waiting to receive win\n");
+        // printf("waiting to receive win\n");
         {
             size = sizeof(struct win) - sizeof(long);
             if (msgrcv(msq_id, &vincita, size, (long) 4, 0) == -1) {
                 err_exit("[ERROR] msgsnd");
             }
-            printf("receive: (mtype: %ld value: %d pid: %d)\n",vincita.mtype,vincita.value,vincita.pid);
+            // printf("receive: (mtype: %ld value: %d pid: %d)\n",vincita.mtype,vincita.value,vincita.pid);
         } // msgrcv (win)
 
         {
-            printf("inc(turno)\n");
-            sops = (struct sembuf) {2, +1, 0};
+            // printf("inc(turno)\n");
+            sops = (struct sembuf) {1, +1, 0};
             if (semop(sem_id, &sops, 1)) {
                 err_exit("[SEMOP]");
             };
-        } // sem[2]++ sblocco client
+        } // sem[1]++ sblocco client
     } while (vincita.value==0);
 
     if(vincita.value==1){
@@ -233,8 +239,8 @@ int main(int argc, char** argv) { //
     matrix = NULL;
 
     {
-        printf("inc(server)\n");
-        sops = (struct sembuf) {3, +1, 0};
+        // printf("inc(server)\n");
+        sops = (struct sembuf) {2, +1, 0};
         if (semop(sem_id, &sops, 1)) {
             err_exit("[SEMOP]");
         };

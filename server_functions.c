@@ -91,11 +91,11 @@ int check_win(char* matrix,int rows,int cols){
     for (i=0;i<rows;i++){
         for(j=0; j<cols;j++){
             if(mat[i][j] == ' '){
-                printf("Matrice non piena\n");
+                // printf("Matrice non piena\n");
                 return 0;
             }
         }
     }
 
-    return -1;
+    return -2;
 }
