@@ -1,51 +1,6 @@
-#include <sys/msg.h>
-#include <sys/sem.h>
-#include <sys/shm.h>
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <signal.h>
-#include <unistd.h>
-#include <errno.h>
-
-void err_exit(char *msg){
-    perror(msg);
-    exit(EXIT_FAILURE);
-}
-
-void usage(){
-    printf("[NOTE] uso: F4Server <righe <colonne> <simbolo1> <simbolo2>\n");
-}
-
-struct matrix {
-    long mtype;
-    int rows;
-    int cols;
-};
-
-struct player_sym {
-    long mtype;
-    char sym;
-};
-
-struct move {
-    long mtype;
-    char sym;
-    int row;
-    int col;
-};
-
-union semun {
-    int val;
-    struct semid_ds *buf;
-    unsigned short *array;
-};
-
-struct win {
-    long mtype;
-    int value;
-    int pid;
-};
+#include "base.h"
+#include "shared_functions.h"
+#include "client_functions.h"
 
 int main(int argc, char** argv) { //
 
@@ -69,13 +24,8 @@ int main(int argc, char** argv) { //
     char *shm_ptr;
     int sem_key, sem_id, sem_num = 10;
     int msq_key, msq_id;
-    struct matrix matrice = {0,0,0};
-    struct player_sym simbolo_giocatore;
-    struct win vincita;
+
     char* matrix;
-    struct move mossa = (struct move) {(long) 3};
-
-
     int sem_ctl;
     union semun arg;
     struct sembuf sops;
@@ -84,7 +34,6 @@ int main(int argc, char** argv) { //
     int size;
     int rows;
     int cols;
-
     int col;
 
     {
@@ -141,6 +90,8 @@ int main(int argc, char** argv) { //
         }
     } // msq_id = msgget
 
+    struct matrix matrice = {0,0,0};
+    printf("waiting to receive matrix\n");
     {
         size = sizeof(struct matrix) - sizeof(long);
         if (msgrcv(msq_id, &matrice, size, (long) 1, 0) == -1) {
@@ -151,6 +102,8 @@ int main(int argc, char** argv) { //
         cols = matrice.cols;
     } // msgrcv (matrix)
 
+    struct player_sym simbolo_giocatore = {1,' '};
+    printf("waiting to receive player sym\n");
     {
         size = sizeof(struct player_sym) - sizeof(long);
         if (msgrcv(msq_id, &simbolo_giocatore, size, (long) 2, 0) == -1) {
@@ -189,16 +142,18 @@ int main(int argc, char** argv) { //
         }
     } // print matrix
 
+    struct move mossa = (struct move) {(long) 3,0,' ',0,0};
+    struct win vincita = {(long)4,0,0};
     do { //
         {
+            printf("dec(turno)\n");
             sops = (struct sembuf) {2, -1, 0};
             if (semop(sem_id, &sops, 1)) {
                 err_exit("[SEMOP]");
             };
-            printf("dec(turno)\n");
         } // sem[2]-- blocco client
 
-        {
+        { //
             do {
                 printf("\nInserisci una colonna (tra 1 e %d): ",cols);
                 // SALVO LA MOSSA //
@@ -209,11 +164,14 @@ int main(int argc, char** argv) { //
             } while(col<1 || col>cols || *(matrix+col-1)!=' ' );
         } // inserisci colonna
 
-        { for (int row = rows-1; row >= 0; row--) {
+        { //
+            for (int row = rows-1; row >= 0; row--) {
                 if (*(matrix+row*cols+col) == ' ') {
                     *(matrix+row*cols+col)  = simbolo_giocatore.sym;
                     mossa.sym=simbolo_giocatore.sym;
                     printf("sym: %c\n",mossa.sym);
+                    mossa.pid=getpid();
+                    printf("pid: %d\n",mossa.pid);
                     mossa.row=row;
                     printf("row: %d\n",mossa.row);
                     mossa.col=col;
@@ -237,25 +195,28 @@ int main(int argc, char** argv) { //
             if (msgsnd(msq_id, &mossa, size, 0) == -1) {
                 err_exit("[MSGSND]");
             }
+            printf("send: (mtype: %ld sym: %c pid: %d row: %d col: %d)\n",mossa.mtype,mossa.sym,mossa.pid,mossa.row,mossa.col);
         } // msgsnd (move)
 
+        printf("waiting to receive win\n");
         {
             size = sizeof(struct win) - sizeof(long);
             if (msgrcv(msq_id, &vincita, size, (long) 4, 0) == -1) {
                 err_exit("[ERROR] msgsnd");
             }
+            printf("receive: (mtype: %ld value: %d pid: %d)\n",vincita.mtype,vincita.value,vincita.pid);
         } // msgrcv (win)
 
         {
+            printf("inc(turno)\n");
             sops = (struct sembuf) {2, +1, 0};
             if (semop(sem_id, &sops, 1)) {
                 err_exit("[SEMOP]");
             };
-            printf("inc(turno)\n");
         } // sem[2]++ sblocco client
     } while (vincita.value==0);
 
-    if(vincita.value==0){
+    if(vincita.value==1){
         if(vincita.pid==getpid()){
             printf("Hai vinto!\n");
         } else {
@@ -263,9 +224,21 @@ int main(int argc, char** argv) { //
         }
     } else if(vincita.value==-1){
         printf("Hai pareggiato!\n");
+    } else {
+        printf("ERRORE");
     }
+
 
     shmdt(shm_ptr);
     matrix = NULL;
+
+    {
+        printf("inc(server)\n");
+        sops = (struct sembuf) {3, +1, 0};
+        if (semop(sem_id, &sops, 1)) {
+            err_exit("[SEMOP]");
+        };
+    } // sem[3]++ sblocco server
+
     return 0;
 }

@@ -1,133 +1,6 @@
-#include <sys/msg.h>
-#include <sys/sem.h>
-#include <sys/shm.h>
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <signal.h>
-#include <unistd.h>
-#include <errno.h>
-
-int sem_ok=0;
-int msq_ok=0;
-int shm_get_ok=0;
-int shm_at_ok=0;
-
-int shm_key, shm_id;
-char *shm_ptr;
-int sem_key, sem_id, sem_num = 10;
-int msq_key, msq_id;
-
-void close_server(){
-    printf("[NOTE]: .... closing server ....\n");
-    if(sem_ok){
-        semctl(sem_id,IPC_RMID,0);
-    }
-    if(msq_ok){
-        msgctl(msq_id, IPC_RMID, NULL);
-    }
-    if(shm_at_ok){
-        shmdt(shm_ptr);
-    }
-    if(shm_get_ok){
-        shmctl(shm_id,IPC_RMID,NULL);
-    }
-};
-
-void err_exit(char *msg){
-    perror(msg);
-    close_server();
-    exit(EXIT_FAILURE);
-}
-
-void usage(){
-    printf("[NOTE] uso: F4Server <righe <colonne> <simbolo1> <simbolo2>\n");
-}
-
-int sigint_count = 0;
-void handle_sigalrm(){
-    sigint_count=0;
-}
-
-void handle_sigint(){
-    signal(SIGALRM, handle_sigalrm); //GESTISCO IL TIMER PER IL SECONDO CTRL-C
-    if(sigint_count==0){
-        printf("[WARNING]: CTRL-C 1: premi un'altra volta per terminare il server\n");
-        sigint_count++;
-        alarm(10);
-    } else {
-        printf("[NOTE]: CTRL-C 2: termino il server...\n");
-        close_server();
-    }
-}
-
-int check_win(char* matrix,int rows,int cols){
-    int i,j;
-
-    // ROW WIN
-    for (i=0;i<rows;i++){
-        for(j=0; j<cols-4;j++){
-            char elem = *(matrix+i*cols+j);
-            int row_win = ((elem!=' ')&&
-                    (elem==*(matrix+i*cols+j+1))&&
-                    (elem==*(matrix+i*cols+j)+2)&&
-                    (elem==*(matrix+i*cols+j)+3) ? 1 : 0);
-            if(row_win==1) return 1;
-        }
-    }
-
-    // COL WIN
-    for (i=0;i<rows-4;i++){
-        for(j=0; j<cols;j++){
-            char elem = *(matrix+i*cols+j);
-            int row_win = ((elem!=' ')&&
-                    (elem==*(matrix+i*(cols+1)+j))&&
-                    (elem==*(matrix+i*(cols+2)+j))&&
-                    (elem==*(matrix+i*(cols+3)+j)) ? 1 : 0);
-            if(row_win==1) return 1;
-        }
-    }
-
-    for (i=0;i<rows;i++){
-        for(j=0; j<cols;j++){
-            if(*(matrix+i*cols+j) == ' '){
-                return 0;
-            }
-        }
-    }
-
-    return -1;
-}
-
-struct matrix {
-    long mtype;
-    int rows;
-    int cols;
-};
-
-struct player_sym {
-    long mtype;
-    char sym;
-};
-
-struct move {
-    long mtype;
-    char sym;
-    int pid;
-    int col;
-};
-
-union semun {
-    int val;
-    struct semid_ds *buf;
-    unsigned short *array;
-};
-
-struct win {
-    long mtype;
-    int value;
-    int pid;
-};
+#include "base.h"
+#include "shared_functions.h"
+#include "server_functions.h"
 
 int main(int argc, char** argv) { //
     {
@@ -332,18 +205,27 @@ int main(int argc, char** argv) { //
     } // msgsnd (player_sym)
 
     {
-        do {
-
+        do { //
+            printf("waiting to receive move\n");
             {
                 size = sizeof(struct move) - sizeof(long);
                 if (msgrcv(msq_id, &mossa, size, (long) 3, 0) == -1) {
                     err_exit("[ERROR] msgsnd");
                 }
-                printf("receive: (mtype: %ld sym: %c pid: %d col: %d)\n",mossa.mtype,mossa.sym,mossa.pid,mossa.col);
+                printf("receive: (mtype: %ld sym: %c pid: %d row: %d col: %d)\n",mossa.mtype,mossa.sym,mossa.pid,mossa.row,mossa.col);
             } // msgrcv (move)
 
             win = check_win(matrix, rows, cols);
             printf("win : %d\n",win);
+
+            {
+                for (int i = 0; i < rows; i++) {
+                    for (int j = 0; j < cols; j++) {
+                        printf("[%c]", (*(matrix+ ((i*cols)+j) )) );
+                    }
+                    printf("\n");
+                }
+            } // print matrix
 
             if (win == 1) { //
                 printf("Vincita\n");
@@ -353,7 +235,22 @@ int main(int argc, char** argv) { //
                     if (msgsnd(msq_id, &vincita, size, 0) == -1) {
                         err_exit("[MSGSND]");
                     }
+                    printf("send: (mtype: %ld value: %d pid: %d)\n",vincita.mtype,vincita.value,vincita.pid);
                 } // msgsnd (win)
+                {
+                    sops = (struct sembuf) {3, -1, 0};
+                    if (semop(sem_id, &sops, 1)) {
+                        err_exit("[SEMOP]");
+                    };
+                    printf("dec(server)\n");
+                } // sem[3]-- blocco server
+                {
+                    sops = (struct sembuf) {3, -1, 0};
+                    if (semop(sem_id, &sops, 1)) {
+                        err_exit("[SEMOP]");
+                    };
+                    printf("dec(server)\n");
+                } // sem[3]-- blocco server
                 close_server();
             } else if (win == 0) {
                 printf("La partita continua\n");
@@ -373,6 +270,20 @@ int main(int argc, char** argv) { //
                         err_exit("[MSGSND]");
                     }
                 } // msgsnd (win)
+                {
+                    sops = (struct sembuf) {3, -1, 0};
+                    if (semop(sem_id, &sops, 1)) {
+                        err_exit("[SEMOP]");
+                    };
+                    printf("dec(server)\n");
+                } // sem[3]-- blocco server
+                {
+                    sops = (struct sembuf) {3, -1, 0};
+                    if (semop(sem_id, &sops, 1)) {
+                        err_exit("[SEMOP]");
+                    };
+                    printf("dec(server)\n");
+                } // sem[3]-- blocco server
                 close_server();
             }
         } while (win==0);
