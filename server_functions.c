@@ -1,4 +1,5 @@
 #include "server_functions.h"
+#include <unistd.h>
 
 int sem_ok=0;
 int msq_ok=0;

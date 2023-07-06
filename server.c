@@ -47,7 +47,7 @@ int main(int argc, char** argv) { //
     int win;
 
     
-    signal(SIGINT, handle_sigint);
+    signal(SIGINT, handle_sigint );
     // printf("sigint handler set\n");
     // sig
 

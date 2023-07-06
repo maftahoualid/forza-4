@@ -1,6 +1,9 @@
 #ifndef SHARED_FUNCTIONS_HH
 #define SHARED_FUNCTIONS_HH
 
+#include <stdio.h>
+#include <unistd.h>
+
 void usage();
 void err_exit();
 

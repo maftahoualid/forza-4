@@ -1,5 +1,5 @@
-#ifndef SHARED_FUNCTIONS_HH
-#define SHARED_FUNCTIONS_HH
+#ifndef SERVER_FUNCTIONS_HH
+#define SERVER_FUNCTIONS_HH
 
 #include <sys/sem.h>
 #include <sys/msg.h>
