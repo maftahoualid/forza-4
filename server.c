@@ -46,10 +46,10 @@ int main(int argc, char** argv) { //
     int size;
     int win;
 
-    {
-        signal(SIGINT, handle_sigint);
-        // printf("sigint handler set\n");
-    } // sig
+    
+    signal(SIGINT, handle_sigint);
+    // printf("sigint handler set\n");
+    // sig
 
     {
         sem_key = ftok("../.", 'a');
